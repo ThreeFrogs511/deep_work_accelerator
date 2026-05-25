@@ -45,7 +45,8 @@ class Deep_Work:
 
     def asking_for_users_input(self, answer:str):
         if answer == "o":
-            output = SaveDeepWorkSession(self.time);
+            time_in_hours= self.time/60
+            output = SaveDeepWorkSession(time_in_hours);
             output.log_deep_work_session()
             other_answer=input("\nData saved.\nReady for another session ?\no for yes, n for no : \n")
             if other_answer == "o":
