@@ -101,8 +101,7 @@ class CsvToGraph:
         created by 'cleaning_csv_data_per_day'
         then hydrates the graph """
         self.cleaning_csv_data_per_day(reader)
-        self.y = []
-        self.x = []
+        self.y, self.x = [], []
         for day in self.data_per_day_CLEANED:
             hour=int(day[0])
             is_month_already_in = False
