@@ -6,9 +6,10 @@ A lightweight terminal app to time, log, and visualize your deep work sessions. 
 
 ## What it does
 
-1. **Timer** — you enter a duration in minutes, a green progress bar counts down in your terminal, and a sound + desktop notification fires when time is up.
-2. **Logger** — after each session you choose whether to save it. Sessions are appended to a local CSV file (`deep_work_output.csv`).
-3. **Visualizer** — a separate script reads the CSV and plots your total work time per day or per month as a line chart.
+1. **Menu** — running the app drops you into an interactive menu: start a session, view your logs, or quit.
+2. **Timer** — you enter a duration in minutes and an optional theme, a green progress bar counts down in your terminal, and a sound + desktop notification fires when time is up. You can pause/resume or quit early from the keyboard.
+3. **Logger** — after each session you choose whether to save it. Sessions are stored in a local SQLite database (`database.db`).
+4. **Visualizer** — the "See the logs" menu option reads the database and plots your total work minutes per day as a line chart for the last 7 recorded days.
 
 ---
 
@@ -16,13 +17,12 @@ A lightweight terminal app to time, log, and visualize your deep work sessions. 
 
 ```
 deep_work/
-├── main.py                   # Entry point for the timer
-├── deep_work.py              # Timer logic (input, countdown, notification)
-├── save_deep_work_session.py # CSV persistence
-├── progress.py               # Entry point for the graph
-├── graph.py                  # CSV → matplotlib chart
-├── timer_over                # Audio file played when the session ends
-└── deep_work_output.csv      # Created automatically on first save
+├── main.py                # Entry point — launches the interactive main menu
+├── deep_work.py           # Core app logic: menu, timer, countdown, pause/resume, notifications
+├── database.py            # SQLite persistence layer (creates/queries database.db)
+├── graph.py                # Reads sessions from the database and plots a 7-day chart
+├── timer_over               # Audio file played when a session ends
+└── database.db             # SQLite database, created automatically on first saved session
 ```
 
 ---
@@ -45,7 +45,7 @@ deep_work/
 # Then, inside the project folder:
 py -3.12 -m venv venv
 .\venv\Scripts\activate
-pip install pygame plyer tqdm matplotlib
+pip install pygame plyer pynput tqdm matplotlib
 ```
 
 ### Linux (Ubuntu / Debian)
@@ -57,10 +57,10 @@ sudo apt install python3.12 python3.12-venv python3.12-dev libdbus-1-dev libglib
 # Inside the project folder:
 python3.12 -m venv venv
 source venv/bin/activate
-pip install pygame plyer dbus-python tqdm matplotlib
+pip install pygame plyer pynput dbus-python tqdm matplotlib
 ```
 
-> `dbus-python` is Linux-only and is needed for desktop notifications. It requires `python3.12-dev` and the dbus system libraries to compile correctly.
+> `dbus-python` is Linux-only and **optional**. `plyer` uses it for desktop notifications when it's installed, but falls back to the `notify-send` binary (present on most Linux desktops by default) when it isn't. Skip it unless `notify-send` is unavailable on your system or you specifically want the direct D-Bus path — it requires `python3.12-dev` and the dbus system libraries to compile.
 
 ### macOS
 
@@ -70,7 +70,7 @@ brew install python@3.12
 # Inside the project folder:
 python3.12 -m venv venv
 source venv/bin/activate
-pip install pygame plyer tqdm matplotlib
+pip install pygame plyer pynput tqdm matplotlib
 ```
 
 > On the first run, macOS will prompt you to allow the terminal to send notifications and access the speakers. Click **Allow**.
@@ -79,50 +79,58 @@ pip install pygame plyer tqdm matplotlib
 
 ## Usage
 
-### Start a session
+### Launch the app
 
 ```bash
 python main.py
 ```
 
-You will be asked how long to work (in minutes). A green progress bar fills as time passes. When it reaches 100%:
+You'll see the main menu:
+
+```
+What is it you desire?
+
+ 1. Launch a Deep Work session.
+ 2. See the logs.
+ 3. Quit
+```
+
+### 1. Launch a Deep Work session
+
+You'll be asked for a duration in minutes and, optionally, a theme (what you're working on). After confirming, a green progress bar fills as time passes:
+
+- Press **`p`** to pause, **`r`** to resume
+- Press **`esc`** to stop the timer early
+
+When the timer reaches 100%:
 - A sound plays from `timer_over`
 - A desktop notification appears
-- You are asked whether to save the session
+- You're asked whether to save the session — saved sessions are written to `database.db`
 
 After saving, you can immediately start another session or exit.
 
-### View your progress
+### 2. See the logs
 
-```bash
-python progress.py
-```
+Plots a line chart of total deep work minutes per day for your most recent days. If there are fewer than 7 recorded days of data, the raw session data is printed to the terminal instead of a chart.
 
-This opens a line chart of your total work time aggregated by month. To switch to a daily view, open `progress.py` and change `"month"` to `"day"`:
+### 3. Quit
 
-```python
-# progress.py
-show_progress = CsvToGraph("day")
-```
+Exits the app.
 
 ---
 
-## Data format
+## Data storage
 
-Sessions are stored in `deep_work_output.csv`:
+Sessions are stored in a SQLite database (`database.db`), in a `deep_work_sessions` table:
 
-```
-hour,date
-90,2026-05-25
-60,2026-05-26
-```
+| Column       | Description                                  |
+|--------------|-----------------------------------------------|
+| `session_id` | Auto-incrementing primary key                |
+| `minutes`    | Duration of the session in minutes           |
+| `theme`      | Optional label for what you worked on        |
+| `date`       | Timestamp the session was saved (defaults to now) |
 
-| Column | Description                        |
-|--------|------------------------------------|
-| `hour` | Duration of the session in minutes |
-| `date` | Date of the session (YYYY-MM-DD)   |
-
-Multiple sessions on the same day are summed automatically in the graph.
+The database file and table are created automatically the first time you save a session — no manual setup required.
 
 ---
 
@@ -133,7 +141,10 @@ Multiple sessions on the same day are summed automatically in the graph.
 | `tqdm`       | Terminal progress bar               |
 | `pygame`     | Audio playback at session end       |
 | `plyer`      | Cross-platform desktop notification |
-| `matplotlib` | Line chart for progress view        |
+| `pynput`     | Pause/resume/quit the timer via keyboard |
+| `matplotlib` | Line chart for the logs view        |
+
+`sqlite3` is part of the Python standard library, so no separate install is needed for the database layer.
 
 Install all at once using the provided `requirements.txt` (after activating your venv):
 
@@ -141,7 +152,7 @@ Install all at once using the provided `requirements.txt` (after activating your
 pip install -r requirements.txt
 ```
 
-On Linux, also install `dbus-python` for desktop notifications:
+On Linux, `dbus-python` is commented out in `requirements.txt` since it's optional (see the [Linux install notes](#linux-ubuntu--debian) above). Uncomment it, or install separately, only if `notify-send` isn't available on your system:
 
 ```bash
 pip install -r requirements.txt dbus-python

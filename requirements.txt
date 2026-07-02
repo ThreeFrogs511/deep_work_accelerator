@@ -1,6 +1,7 @@
 matplotlib==3.10.9
 plyer==2.1.0
 pygame==2.6.1
+pynput==1.8.2
 tqdm==4.67.3
 
 # Linux only
