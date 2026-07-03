@@ -8,6 +8,14 @@ from database import Database
 from pynput import keyboard
 from graph import Plotter
 
+def handling_keyboard_interrupt(function):
+    def before(*args, **kwargs):
+        try:
+            function(*args, **kwargs)
+        except KeyboardInterrupt:
+            print("\nProgram stopped.")
+            return
+    return before
 
 class Deep_Work:
     def __init__(self):
@@ -17,27 +25,27 @@ class Deep_Work:
         self.timer_paused = False
 
     
+   
+        
+    @handling_keyboard_interrupt
     def main_menu(self):
         """asking the user what does he want"""
-        try:
-            user_choice = input("\nWhat is it you desire?\n\n 1. Launch a Deep Work session. \n 2. See the logs.\n 3. Quit\n")
-            if user_choice == "1" or user_choice =="&":
-                self.launching_timer()
-            elif user_choice == "2" or user_choice =="é":
-                # work in progress
-                db = Database()
-                data = db.read_all_entries()
-                plot = Plotter()
-                plot.plotting_deep_work_session(data)
+        user_choice = input("\nWhat is it you desire?\n\n 1. Launch a Deep Work session. \n 2. See the logs.\n 3. Quit\n")
+        if user_choice == "1" or user_choice =="&":
+            self.launching_timer()
+        elif user_choice == "2" or user_choice =="é":
+            # work in progress
+            db = Database()
+            data = db.read_all_entries()
+            plot = Plotter()
+            plot.plotting_deep_work_session(data)
 
-            elif user_choice == "3" or user_choice =='"':
-                print("See you later!")
-                return;    
-            else: 
-                print("\nInput not recognized.\n")
-                self.main_menu()
-        except KeyboardInterrupt:
-            return;
+        elif user_choice == "3" or user_choice =='"':
+            raise KeyboardInterrupt
+        else: 
+            print("\nInput not recognized.\n")
+            self.main_menu()
+
 
 
     def converting_minutes_to_seconds(self):
@@ -71,13 +79,11 @@ class Deep_Work:
             title='Deep Work',
             message='Work session over !',
             )
-            try:
-                answer = input(f"\nYou've worked for {str(self.time)} minute(s).\nSave your progress (y/n): \n")
-                self.asking_for_users_input(answer)
-            except KeyboardInterrupt:
-                return;
+            answer = input(f"\nYou've worked for {str(self.time)} minute(s).\nSave your progress ? (y/n): \n")
+            self.asking_for_users_input(answer)
 
     def asking_for_users_input(self, answer:str):
+        print(answer)
         if answer == "y":
             entry = (self.time, self.theme)
             arr = []
@@ -101,20 +107,18 @@ class Deep_Work:
         listener = keyboard.Listener(on_press=self.pausing_progress_bar)
         listener.start()
         print("\nThe deep work begins. Press 'p' to pause, then 'r' to resume.\nPress esc to quit. \n")
-        try:
-            for i in tqdm(range(time_in_seconds), colour="green"):
-                if i>time_in_seconds:
-                    break
-                if self.timer_paused: 
-                    while self.timer_paused:
-                        pass
-                elif self.quit_the_game:
-                    raise KeyboardInterrupt
-                else:
-                    time.sleep(1)
-            self.informing_timer_is_over();
-        except KeyboardInterrupt:
-            print("\nTimer stopped.")
+        for i in tqdm(range(time_in_seconds), colour="green"):
+            if i>time_in_seconds:
+                break
+            if self.timer_paused: 
+                while self.timer_paused:
+                    pass
+            elif self.quit_the_game:
+                raise KeyboardInterrupt
+            else:
+                time.sleep(1)
+        self.informing_timer_is_over();
+
 
     def pausing_progress_bar(self, key, event):
         try:
@@ -133,19 +137,15 @@ class Deep_Work:
         while not self.quit_the_game:
             self.choosing_time()
             self.choosing_theme()
-            try:
-                if self.theme:
-                    user_ready_to_begin = input(f"\n{self.time} minute(s) of work on {self.theme}.\nReady to begin ? (y/n)\n")
-                else:
-                    user_ready_to_begin = input(f"\n{self.time} minute(s) of work..\nReady to begin ? (y/n)\n")
-                if user_ready_to_begin == "y":
-                    time_in_seconds = self.converting_minutes_to_seconds()
-                    self.displaying_progressing_bar(time_in_seconds)
-                elif user_ready_to_begin == "n":
-                    self.main_menu()
-            except KeyboardInterrupt:
-                break;
-
+            if self.theme:
+                user_ready_to_begin = input(f"\n{self.time} minute(s) of work on {self.theme}.\nReady to begin ? (y/n)\n")
+            else:
+                user_ready_to_begin = input(f"\n{self.time} minute(s) of work.\nReady to begin ? (y/n)\n")
+            if user_ready_to_begin == "y":
+                time_in_seconds = self.converting_minutes_to_seconds()
+                self.displaying_progressing_bar(time_in_seconds)
+            elif user_ready_to_begin == "n":
+                self.main_menu()
 
 
 

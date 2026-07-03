@@ -24,7 +24,8 @@ class Plotter:
         
         if len(last_seven_days) < 7:
             print("\nNot enough data to plot a chart. Here's the raw data instead:\n")
-            print(last_seven_days)
+            for day in last_seven_days:
+                print(f"{str(day[1])} - {day[0]} minute(s) of work - '${day[2]}' ")
             return False
         else:
             for day in last_seven_days:
