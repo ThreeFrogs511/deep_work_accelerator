@@ -7,13 +7,17 @@ from pygame import mixer
 from database import Database
 from pynput import keyboard
 from graph import Plotter
+import pywinctl
+
 
 def handling_keyboard_interrupt(function):
     def before(*args, **kwargs):
+        self = args[0]
         try:
             function(*args, **kwargs)
         except KeyboardInterrupt:
             print("\nProgram stopped.")
+            self.quit_the_game = True
             return
     return before
 
@@ -23,6 +27,7 @@ class Deep_Work:
         self.time=0
         self.quit_the_game = False
         self.timer_paused = False
+        self.current_window=None
 
     
    
@@ -30,6 +35,7 @@ class Deep_Work:
     @handling_keyboard_interrupt
     def main_menu(self):
         """asking the user what does he want"""
+        self.current_window = pywinctl.getActiveWindowTitle()
         user_choice = input("\nWhat is it you desire?\n\n 1. Launch a Deep Work session. \n 2. See the logs.\n 3. Quit\n")
         if user_choice == "1" or user_choice =="&":
             self.launching_timer()
@@ -83,7 +89,6 @@ class Deep_Work:
             self.asking_for_users_input(answer)
 
     def asking_for_users_input(self, answer:str):
-        print(answer)
         if answer == "y":
             entry = (self.time, self.theme)
             arr = []
@@ -117,21 +122,39 @@ class Deep_Work:
                 raise KeyboardInterrupt
             else:
                 time.sleep(1)
+        listener.stop()
+        time.sleep(0.1)
+        self.flush_input()
         self.informing_timer_is_over();
 
 
-    def pausing_progress_bar(self, key, event):
+    def pausing_progress_bar(self, key):
+        """only executed if the user is on the terminal"""
+        if pywinctl.getActiveWindowTitle() == self.current_window:
+            try:
+                if key.char =="p":
+                    self.timer_paused = True
+                if key.char =="r":
+                    self.timer_paused = False
+            except AttributeError:
+                print(key)
+                if key == keyboard.Key.esc:
+                    self.timer_paused = False
+                    self.quit_the_game = True
+                    return False
+
+    def flush_input(self):
+        """required to flush the inputs from listener"""
         try:
-            if key.char =="p":
-                self.timer_paused = True
-            if key.char =="r":
-                self.timer_paused = False
-        except AttributeError:
-            pass
-            if key == keyboard.Key.esc:
-                self.timer_paused = False
-                self.quit_the_game = True
-    
+            import msvcrt
+            # Sous Windows : on lit tout ce qui est dans le tampon jusqu'à ce qu'il soit vide
+            while msvcrt.kbhit():
+                msvcrt.getch()
+        except ImportError:
+            import sys
+            from termios import tcflush, TCIFLUSH
+            # Sous Linux/macOS : on vide le tampon d'entrée standard
+            tcflush(sys.stdin, TCIFLUSH)
 
     def launching_timer(self):
         while not self.quit_the_game:

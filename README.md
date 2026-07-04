@@ -45,7 +45,7 @@ deep_work/
 # Then, inside the project folder:
 py -3.12 -m venv venv
 .\venv\Scripts\activate
-pip install pygame plyer pynput tqdm matplotlib
+pip install pygame plyer pynput pywinctl tqdm matplotlib
 ```
 
 ### Linux (Ubuntu / Debian)
@@ -57,7 +57,7 @@ sudo apt install python3.12 python3.12-venv python3.12-dev libdbus-1-dev libglib
 # Inside the project folder:
 python3.12 -m venv venv
 source venv/bin/activate
-pip install pygame plyer pynput dbus-python tqdm matplotlib
+pip install pygame plyer pynput pywinctl dbus-python tqdm matplotlib
 ```
 
 > `dbus-python` is Linux-only and **optional**. `plyer` uses it for desktop notifications when it's installed, but falls back to the `notify-send` binary (present on most Linux desktops by default) when it isn't. Skip it unless `notify-send` is unavailable on your system or you specifically want the direct D-Bus path — it requires `python3.12-dev` and the dbus system libraries to compile.
@@ -70,7 +70,7 @@ brew install python@3.12
 # Inside the project folder:
 python3.12 -m venv venv
 source venv/bin/activate
-pip install pygame plyer pynput tqdm matplotlib
+pip install pygame plyer pynput pywinctl tqdm matplotlib
 ```
 
 > On the first run, macOS will prompt you to allow the terminal to send notifications and access the speakers. Click **Allow**.
@@ -101,6 +101,8 @@ You'll be asked for a duration in minutes and, optionally, a theme (what you're 
 
 - Press **`p`** to pause, **`r`** to resume
 - Press **`esc`** to stop the timer early
+
+Pause/resume/quit key presses are only picked up while the terminal window you launched the app from is focused, so typing in other windows won't accidentally affect the timer.
 
 When the timer reaches 100%:
 - A sound plays from `timer_over`
@@ -142,6 +144,7 @@ The database file and table are created automatically the first time you save a 
 | `pygame`     | Audio playback at session end       |
 | `plyer`      | Cross-platform desktop notification |
 | `pynput`     | Pause/resume/quit the timer via keyboard |
+| `pywinctl`   | Detects the active window so pause/resume/quit only react while the app's terminal is focused |
 | `matplotlib` | Line chart for the logs view        |
 
 `sqlite3` is part of the Python standard library, so no separate install is needed for the database layer.

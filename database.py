@@ -39,17 +39,17 @@ class Database:
 
 
     def search_entry(self, filter:str, search_input:str):
-            try:
-                allowed_columns=("date", "minutes", "theme")
-                if filter not in allowed_columns:
-                    raise ValueError
-                cursor = self.conn.cursor()
-                cursor.execute(f"SELECT minutes, date, theme FROM deep_work_sessions WHERE {filter} LIKE ?", (f"{search_input}%",))
-                data = cursor.fetchall()
-                cursor.close()
-                return data
-            except ValueError:
-                pass
+        try:
+            allowed_columns=("date", "minutes", "theme")
+            if filter not in allowed_columns:
+                raise ValueError
+            cursor = self.conn.cursor()
+            cursor.execute(f"SELECT minutes, date, theme FROM deep_work_sessions WHERE {filter} LIKE ?", (f"{search_input}%",))
+            data = cursor.fetchall()
+            cursor.close()
+            return data
+        except ValueError:
+            pass
 
 
     def calculate_nb_of_minutes_per_time_window(self, time_window:str):
