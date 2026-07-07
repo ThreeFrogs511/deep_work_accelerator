@@ -12,3 +12,5 @@ __pycache__/
 # LibreOffice lock files
 .~lock.*
 
+.claude/
+preview_ui.py

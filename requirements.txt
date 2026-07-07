@@ -3,6 +3,8 @@ plyer==2.1.0
 pygame==2.6.1
 pynput==1.8.2
 PyWinCtl==0.4.1
+questionary==2.1.1
+rich==15.0.0
 tqdm==4.67.3
 
 # Linux only

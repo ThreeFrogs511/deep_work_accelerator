@@ -8,6 +8,12 @@ from database import Database
 from pynput import keyboard
 from graph import Plotter
 import pywinctl
+from rich.console import Console
+import random
+import questionary
+from questionary import Style
+from rich.panel import Panel
+from rich.prompt import Prompt, IntPrompt, Confirm
 
 
 def handling_keyboard_interrupt(function):
@@ -16,7 +22,8 @@ def handling_keyboard_interrupt(function):
         try:
             function(*args, **kwargs)
         except KeyboardInterrupt:
-            print("\nProgram stopped.")
+            console = Console()
+            console.print(f"\n{random.choice(goodbye_messages)}", style="bold #1AFF80")
             self.quit_the_game = True
             return
     return before
@@ -28,6 +35,7 @@ class Deep_Work:
         self.quit_the_game = False
         self.timer_paused = False
         self.current_window=None
+        self.console = Console()
 
     
    
@@ -36,21 +44,21 @@ class Deep_Work:
     def main_menu(self):
         """asking the user what does he want"""
         self.current_window = pywinctl.getActiveWindowTitle()
-        user_choice = input("\nWhat is it you desire?\n\n 1. Launch a Deep Work session. \n 2. See the logs.\n 3. Quit\n")
-        if user_choice == "1" or user_choice =="&":
+        user_choice = questionary.select(f"\n{random.choice(welcome_messages)}\n", choices=["1. Launch a Deep Work session.", "2. See the logs.", "3. Quit" ], qmark="", style=custom_style_welcome).ask()
+
+        if user_choice == "1. Launch a Deep Work session.":
             self.launching_timer()
-        elif user_choice == "2" or user_choice =="é":
+        elif user_choice == "2. See the logs.":
             # work in progress
             db = Database()
             data = db.read_all_entries()
             plot = Plotter()
             plot.plotting_deep_work_session(data)
 
-        elif user_choice == "3" or user_choice =='"':
+        elif user_choice == "3. Quit":
             raise KeyboardInterrupt
         else: 
-            print("\nInput not recognized.\n")
-            self.main_menu()
+            raise KeyboardInterrupt
 
 
 
@@ -60,19 +68,12 @@ class Deep_Work:
 
 
     def choosing_time(self) :
-        self.time = input("\nLet's get things done today.\nEnter below the duration of today's deep work session in minutes :\n")
-        if not self.time or self.time == "":
-            print("\nNo empty inputs.\n")
-            self.choosing_time()
-        try:
-            self.time = int(self.time)
-        except ValueError:
-            print("\nOnly numerics authorized.\n")
-            self.choosing_time()
+        self.time = IntPrompt.ask("\n[bold #1AFF80]How long (in minutes)[/]")
+
      
 
     def choosing_theme(self):
-        self.theme = input("\nWhat are you working on ? (optional)\n")
+        self.theme = Prompt.ask("\n[bold #1AFF80]What are you working on (optional)[/]")
         
     def playing_notification_sound(self):
         mixer.init()
@@ -85,7 +86,7 @@ class Deep_Work:
             title='Deep Work',
             message='Work session over !',
             )
-            answer = input(f"\nYou've worked for {str(self.time)} minute(s).\nSave your progress ? (y/n): \n")
+            answer = self.console.input(f"\nYou've worked for {str(self.time)} minute(s).\nSave your progress ? (y/n): \n")
             self.asking_for_users_input(answer)
 
     def asking_for_users_input(self, answer:str):
@@ -95,13 +96,15 @@ class Deep_Work:
             arr.append(entry)
             db = Database()
             db.insert_entry(arr)
-            other_answer=input("\nData saved.\nReady for another session (y/n):\n")
+            other_answer=self.console.input("\nData saved.\nReady for another session (y/n):\n")
             if other_answer == "y":
                 self.launching_timer()
             elif other_answer == "n":
                 self.quit_the_game = True
+                raise KeyboardInterrupt
         elif answer == "n":
             self.quit_the_game = True
+            raise KeyboardInterrupt
         else:
             print("\nWrong input.\n")
             self.informing_timer_is_over()
@@ -111,7 +114,7 @@ class Deep_Work:
     def displaying_progressing_bar(self, time_in_seconds:int):
         listener = keyboard.Listener(on_press=self.pausing_progress_bar)
         listener.start()
-        print("\nThe deep work begins. Press 'p' to pause, then 'r' to resume.\nPress esc to quit. \n")
+        self.console.print(Panel("\nThe deep work begins. Press 'p' to pause, then 'r' to resume.\nPress esc to quit. \n", style="yellow"))
         for i in tqdm(range(time_in_seconds), colour="green"):
             if i>time_in_seconds:
                 break
@@ -161,14 +164,52 @@ class Deep_Work:
             self.choosing_time()
             self.choosing_theme()
             if self.theme:
-                user_ready_to_begin = input(f"\n{self.time} minute(s) of work on {self.theme}.\nReady to begin ? (y/n)\n")
+                self.console.print(f"\n[bold #1AFF80]You've chosen:[/]\n[#FFAA00 not bold]·{self.time} minute(s) of work\n·{self.theme}.[/]")
+                user_ready_to_begin = questionary.select("\nReady to begin ?", choices=["Yes", "No (to main menu)"],  qmark="", style=custom_style_confirm_choices).ask()
             else:
-                user_ready_to_begin = input(f"\n{self.time} minute(s) of work.\nReady to begin ? (y/n)\n")
-            if user_ready_to_begin == "y":
+                self.console.print(f"\n[bold #1AFF80]You've chosen:[/]\n[#FFAA00 not bold]·{self.time} minute(s) of work\n·No work theme.[/]")
+                user_ready_to_begin = questionary.select("\nReady to begin ?", choices=["Yes", "No (to main menu)"],  qmark="", style=custom_style_confirm_choices).ask()
+            if user_ready_to_begin == "Yes":
                 time_in_seconds = self.converting_minutes_to_seconds()
                 self.displaying_progressing_bar(time_in_seconds)
-            elif user_ready_to_begin == "n":
+            elif user_ready_to_begin == "No (to main menu)":
                 self.main_menu()
+                break;
 
 
 
+
+welcome_messages = [
+    "Hey there! Great to see you. Let's get started!",
+    "Welcome! Ready to do some awesome stuff today?",
+    "Hi! Hope you're having a great day. What are we building?",
+    "Welcome aboard! Let's get to work. 🚀",
+    "Hey! Glad you're here. Let's dive right in.",
+    "Welcome back! Good to see you again.",
+    "Hello! Ready when you are.",
+    "Hey, welcome! Let's make something cool today."
+]
+
+goodbye_messages = [
+    "Goodbye! Have a great rest of your day.",
+    "All done here! Catch you later.",
+    "Thanks for stopping by. See you next time!",
+    "Take care! Let me know when you need me again.",
+    "That's all for now. Have a good one!",
+    "Signing off! Talk to you soon.",
+    "Great working with you today. Bye!",
+    "Everything is set. See ya!",
+    "Thanks for using the script! Have an awesome day ahead.",
+    "Until next time! Take it easy."
+]
+
+custom_style_welcome = Style([
+    ('instruction', 'italic'),
+    ('question', 'bold #1AFF80'),
+    ('highlighted', 'bold')
+])
+
+custom_style_confirm_choices = Style([
+    ('question', 'bold #1AFF80'),
+    ('highlighted', 'bold')
+])

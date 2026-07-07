@@ -21,9 +21,11 @@ class Database:
             data:list[tuple[int, str | None]]
     ):
         cursor = self.conn.cursor()
-        cursor.executemany("INSERT INTO deep_work_sessions(minutes, theme) VALUES(?, ?)", data)
+        cursor.executemany("INSERT INTO deep_work_sessions(minutes, theme) VALUES(?, ?) RETURNING minutes, theme", data)
+        row = cursor.fetchall()
         self.conn.commit()
         cursor.close()
+        return row
 
     def clean_data_to_insert(data:list[tuple[int, str | None]]):
         pass
@@ -31,7 +33,7 @@ class Database:
 
     def read_all_entries(self):
         cursor = self.conn.cursor()
-        cursor.execute("SELECT minutes, date, theme FROM deep_work_sessions")
+        cursor.execute("SELECT minutes, date, theme FROM deep_work_sessions group by date")
         data = cursor.fetchall()
         cursor.close()
         return data
@@ -49,7 +51,7 @@ class Database:
             cursor.close()
             return data
         except ValueError:
-            pass
+            print("Wrong filter")
 
 
     def calculate_nb_of_minutes_per_time_window(self, time_window:str):

@@ -9,7 +9,7 @@ A lightweight terminal app to time, log, and visualize your deep work sessions. 
 1. **Menu** — running the app drops you into an interactive menu: start a session, view your logs, or quit.
 2. **Timer** — you enter a duration in minutes and an optional theme, a green progress bar counts down in your terminal, and a sound + desktop notification fires when time is up. You can pause/resume or quit early from the keyboard.
 3. **Logger** — after each session you choose whether to save it. Sessions are stored in a local SQLite database (`database.db`).
-4. **Visualizer** — the "See the logs" menu option reads the database and plots your total work minutes per day as a line chart for the last 7 recorded days.
+4. **Visualizer** — the "See the logs" menu option reads the database and plots your total work minutes per day as a bar chart for the last 7 recorded days.
 
 ---
 
@@ -45,7 +45,7 @@ deep_work/
 # Then, inside the project folder:
 py -3.12 -m venv venv
 .\venv\Scripts\activate
-pip install pygame plyer pynput pywinctl tqdm matplotlib
+pip install pygame plyer pynput pywinctl tqdm matplotlib rich questionary
 ```
 
 ### Linux (Ubuntu / Debian)
@@ -57,7 +57,7 @@ sudo apt install python3.12 python3.12-venv python3.12-dev libdbus-1-dev libglib
 # Inside the project folder:
 python3.12 -m venv venv
 source venv/bin/activate
-pip install pygame plyer pynput pywinctl dbus-python tqdm matplotlib
+pip install pygame plyer pynput pywinctl dbus-python tqdm matplotlib rich questionary
 ```
 
 > `dbus-python` is Linux-only and **optional**. `plyer` uses it for desktop notifications when it's installed, but falls back to the `notify-send` binary (present on most Linux desktops by default) when it isn't. Skip it unless `notify-send` is unavailable on your system or you specifically want the direct D-Bus path — it requires `python3.12-dev` and the dbus system libraries to compile.
@@ -70,7 +70,7 @@ brew install python@3.12
 # Inside the project folder:
 python3.12 -m venv venv
 source venv/bin/activate
-pip install pygame plyer pynput pywinctl tqdm matplotlib
+pip install pygame plyer pynput pywinctl tqdm matplotlib rich questionary
 ```
 
 > On the first run, macOS will prompt you to allow the terminal to send notifications and access the speakers. Click **Allow**.
@@ -85,14 +85,12 @@ pip install pygame plyer pynput pywinctl tqdm matplotlib
 python main.py
 ```
 
-You'll see the main menu:
+You'll see an interactive main menu (navigate with the arrow keys, select with Enter):
 
 ```
-What is it you desire?
-
- 1. Launch a Deep Work session.
- 2. See the logs.
- 3. Quit
+1. Launch a Deep Work session.
+2. See the logs.
+3. Quit
 ```
 
 ### 1. Launch a Deep Work session
@@ -113,7 +111,7 @@ After saving, you can immediately start another session or exit.
 
 ### 2. See the logs
 
-Plots a line chart of total deep work minutes per day for your most recent days. If there are fewer than 7 recorded days of data, the raw session data is printed to the terminal instead of a chart.
+Plots a bar chart of total deep work minutes per day for your most recent days. If there are fewer than 7 recorded days of data, the raw session data is printed to the terminal instead of a chart.
 
 ### 3. Quit
 
@@ -145,7 +143,9 @@ The database file and table are created automatically the first time you save a 
 | `plyer`      | Cross-platform desktop notification |
 | `pynput`     | Pause/resume/quit the timer via keyboard |
 | `pywinctl`   | Detects the active window so pause/resume/quit only react while the app's terminal is focused |
-| `matplotlib` | Line chart for the logs view        |
+| `matplotlib` | Bar chart for the logs view         |
+| `rich`       | Styled console output and prompts (panels, colored text) |
+| `questionary`| Arrow-key-navigable menus and confirmation prompts |
 
 `sqlite3` is part of the Python standard library, so no separate install is needed for the database layer.
 
