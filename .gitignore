@@ -1,6 +1,7 @@
 # Data
 *.csv
 database_template.py
+database.db
 
 # Virtual environment
 venv/
